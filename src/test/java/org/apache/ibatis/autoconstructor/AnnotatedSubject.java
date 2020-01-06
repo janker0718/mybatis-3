@@ -24,6 +24,7 @@ public class AnnotatedSubject {
   private final int height;
   private final int weight;
 
+
   public AnnotatedSubject(final int id, final String name, final int age, final int height, final int weight) {
     this.id = id;
     this.name = name;
@@ -32,6 +33,7 @@ public class AnnotatedSubject {
     this.weight = weight;
   }
 
+  //自动映射构造器 基本类型包装类作为构造参数
   @AutomapConstructor
   public AnnotatedSubject(final int id, final String name, final int age, final Integer height, final Integer weight) {
     this.id = id;
