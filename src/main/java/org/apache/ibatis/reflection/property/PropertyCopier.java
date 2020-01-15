@@ -39,6 +39,7 @@ public final class PropertyCopier {
           } catch (IllegalAccessException e) {
             if (Reflector.canControlMemberAccessible()) {
               field.setAccessible(true);
+              //将sourceBean对象中的属性设置到destinationBean对象中
               field.set(destinationBean, field.get(sourceBean));
             } else {
               throw e;
@@ -48,6 +49,7 @@ public final class PropertyCopier {
           // Nothing useful to do, will only fail on final fields, which will be ignored.
         }
       }
+      // 继续拷贝父类中的定义的字段
       parent = parent.getSuperclass();
     }
   }

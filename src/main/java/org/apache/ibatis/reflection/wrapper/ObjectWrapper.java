@@ -25,31 +25,37 @@ import org.apache.ibatis.reflection.property.PropertyTokenizer;
  * @author Clinton Begin
  */
 public interface ObjectWrapper {
-
+  //如果是普通bean调用getter方法 如果是集合 则获取指定key或者下标对应的value值
   Object get(PropertyTokenizer prop);
-
+  //如果是普通bean调用setter方法 如果是集合 则设置指定key或者下标对应的value值
   void set(PropertyTokenizer prop, Object value);
-
+  //查找属性表达式指定的属性，第二个参数标识是否忽视属性表达式的下划线
   String findProperty(String name, boolean useCamelCaseMapping);
 
+  //查找可读属性的名称集合
   String[] getGetterNames();
-
+  //查找可写属性的名称集合
   String[] getSetterNames();
 
+  //解析表达式指定属性的setter方法的参数类型
   Class<?> getSetterType(String name);
-
+  //解析表达式指定属性的getter方法的参数类型
   Class<?> getGetterType(String name);
 
+  //判断属性表达式指定属性是否有getter方法
   boolean hasSetter(String name);
-
+  //判断属性表达式指定属性是否有setter方法
   boolean hasGetter(String name);
 
+  //为属性表达式指定的属性创建相应的MetaObject对象
   MetaObject instantiatePropertyValue(String name, PropertyTokenizer prop, ObjectFactory objectFactory);
 
+  //封装的对象是否为Collect类型
   boolean isCollection();
 
+  //调用Collection对象的add()方法
   void add(Object element);
-
+  //调用Collection对象的addAll()方法
   <E> void addAll(List<E> element);
 
 }

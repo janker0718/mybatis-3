@@ -42,10 +42,14 @@ public class BeanWrapper extends BaseWrapper {
 
   @Override
   public Object get(PropertyTokenizer prop) {
+    //存在索引信息 则表示属性表达式中的name部分为集合类型
     if (prop.getIndex() != null) {
+      //通过MetaObject.getValue()方法获取object对象中指定集合属性
       Object collection = resolveCollection(prop, object);
+      //获取集合元素
       return getCollectionValue(prop, collection);
     } else {
+      //不存在索引信息 则name部分为普通对象，查找并调用invoker相关方法获取属性
       return getBeanProperty(prop, object);
     }
   }
@@ -146,10 +150,13 @@ public class BeanWrapper extends BaseWrapper {
   @Override
   public MetaObject instantiatePropertyValue(String name, PropertyTokenizer prop, ObjectFactory objectFactory) {
     MetaObject metaValue;
+    //获取属性相应的setter方法的参数类型
     Class<?> type = getSetterType(prop.getName());
     try {
+      //通过反射的方式创建对象
       Object newObject = objectFactory.create(type);
       metaValue = MetaObject.forObject(newObject, metaObject.getObjectFactory(), metaObject.getObjectWrapperFactory(), metaObject.getReflectorFactory());
+      //将上面创建的属性对象 设置到对应的属性对象集合中
       set(prop, newObject);
     } catch (Exception e) {
       throw new ReflectionException("Cannot set value of property '" + name + "' because '" + name + "' is null and cannot be instantiated on instance of " + type.getName() + ". Cause:" + e.toString(), e);
@@ -159,8 +166,10 @@ public class BeanWrapper extends BaseWrapper {
 
   private Object getBeanProperty(PropertyTokenizer prop, Object object) {
     try {
+      //根据属性名称查找Reflector.getMethods集合中相应的getFieldInvoker或者MethodInvoker
       Invoker method = metaClass.getGetInvoker(prop.getName());
       try {
+        //获取属性值
         return method.invoke(object, NO_ARGUMENTS);
       } catch (Throwable t) {
         throw ExceptionUtil.unwrapThrowable(t);

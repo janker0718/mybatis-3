@@ -21,23 +21,32 @@ import java.util.Iterator;
  * @author Clinton Begin
  */
 public class PropertyTokenizer implements Iterator<PropertyTokenizer> {
+  //当前表达式的名称
   private String name;
+  //当前表达式的索引名
   private final String indexedName;
+  //索引下标
   private String index;
+  //子表达式
   private final String children;
 
   public PropertyTokenizer(String fullname) {
+    //查找"."的位置
     int delim = fullname.indexOf('.');
     if (delim > -1) {
+      //初始化name
       name = fullname.substring(0, delim);
+      //初始化children
       children = fullname.substring(delim + 1);
     } else {
       name = fullname;
       children = null;
     }
+    //初始化indexedName
     indexedName = name;
     delim = name.indexOf('[');
     if (delim > -1) {
+      //初始化index
       index = name.substring(delim + 1, name.length() - 1);
       name = name.substring(0, delim);
     }
