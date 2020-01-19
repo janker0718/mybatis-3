@@ -55,9 +55,11 @@ public abstract class BaseTypeHandler<T> extends TypeReference<T> implements Typ
   public void setParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType) throws SQLException {
     if (parameter == null) {
       if (jdbcType == null) {
+        //参数 类型 异常
         throw new TypeException("JDBC requires that the JdbcType must be specified for all nullable parameters.");
       }
       try {
+        //绑定参数为null的处理
         ps.setNull(i, jdbcType.TYPE_CODE);
       } catch (SQLException e) {
         throw new TypeException("Error setting null for parameter #" + i + " with JdbcType " + jdbcType + " . "
@@ -66,6 +68,7 @@ public abstract class BaseTypeHandler<T> extends TypeReference<T> implements Typ
       }
     } else {
       try {
+        //绑定非空参数 该方法为抽象方法 由子类实现
         setNonNullParameter(ps, i, parameter, jdbcType);
       } catch (Exception e) {
         throw new TypeException("Error setting non null for parameter #" + i + " with JdbcType " + jdbcType + " . "
@@ -78,6 +81,7 @@ public abstract class BaseTypeHandler<T> extends TypeReference<T> implements Typ
   @Override
   public T getResult(ResultSet rs, String columnName) throws SQLException {
     try {
+      //抽象方法 由多个重载 由子类实现
       return getNullableResult(rs, columnName);
     } catch (Exception e) {
       throw new ResultMapException("Error attempting to get column '" + columnName + "' from result set.  Cause: " + e, e);
@@ -87,6 +91,7 @@ public abstract class BaseTypeHandler<T> extends TypeReference<T> implements Typ
   @Override
   public T getResult(ResultSet rs, int columnIndex) throws SQLException {
     try {
+      //抽象方法 由多个重载 由子类实现
       return getNullableResult(rs, columnIndex);
     } catch (Exception e) {
       throw new ResultMapException("Error attempting to get column #" + columnIndex + " from result set.  Cause: " + e, e);
@@ -96,6 +101,7 @@ public abstract class BaseTypeHandler<T> extends TypeReference<T> implements Typ
   @Override
   public T getResult(CallableStatement cs, int columnIndex) throws SQLException {
     try {
+      //抽象方法 由多个重载 由子类实现
       return getNullableResult(cs, columnIndex);
     } catch (Exception e) {
       throw new ResultMapException("Error attempting to get column #" + columnIndex + " from callable statement.  Cause: " + e, e);
