@@ -28,9 +28,13 @@ public final class LogFactory {
    */
   public static final String MARKER = "MYBATIS";
 
+  //记录当前使用的第三方日志组件对应的适配器的构造方法
   private static Constructor<? extends Log> logConstructor;
 
   static {
+    // 针对每种日志组件使用tryImplementation()方法进行尝试加载，具体调用顺序是：
+    // useSlf4jLogging -> useCommonsLogging -> useLog4J2Logging -> useLog4JLogging
+    // -> useJdkLogging -> useNoLogging
     tryImplementation(LogFactory::useSlf4jLogging);
     tryImplementation(LogFactory::useCommonsLogging);
     tryImplementation(LogFactory::useLog4J2Logging);
@@ -99,11 +103,14 @@ public final class LogFactory {
 
   private static void setImplementation(Class<? extends Log> implClass) {
     try {
+      //获取指定适配器的构造函数
       Constructor<? extends Log> candidate = implClass.getConstructor(String.class);
       Log log = candidate.newInstance(LogFactory.class.getName());
+      //输出日志
       if (log.isDebugEnabled()) {
         log.debug("Logging initialized using '" + implClass + "' adapter.");
       }
+      //初始化logConstructor
       logConstructor = candidate;
     } catch (Throwable t) {
       throw new LogException("Error setting Log implementation.  Cause: " + t, t);
