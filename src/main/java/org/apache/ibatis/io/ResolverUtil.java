@@ -71,6 +71,7 @@ public class ResolverUtil<T> {
      * Will be called repeatedly with candidate classes. Must return True if a class
      * is to be included in the results, false otherwise.
      */
+    //参数Type是待检测的类，如果该类符合条件，则matches()返回true，否则返回fals
     boolean matches(Class<?> type);
   }
 
@@ -78,11 +79,12 @@ public class ResolverUtil<T> {
    * A Test that checks to see if each class is assignable to the provided class. Note
    * that this test will match the parent type itself if it is presented for matching.
    */
-  public static class IsA implements Test {
+  public static class IsA implements Test { //用于检测指定类是否继承了parent指定的类
     private Class<?> parent;
 
     /** Constructs an IsA test using the supplied Class as the parent class/interface. */
     public IsA(Class<?> parentType) {
+      //初始化parent字段
       this.parent = parentType;
     }
 
@@ -102,11 +104,12 @@ public class ResolverUtil<T> {
    * A Test that checks to see if each class is annotated with a specific annotation. If it
    * is, then the test returns true, otherwise false.
    */
-  public static class AnnotatedWith implements Test {
+  public static class AnnotatedWith implements Test { //检测指定类是否添加了Annotation注解
     private Class<? extends Annotation> annotation;
 
     /** Constructs an AnnotatedWith test for the specified annotation type. */
     public AnnotatedWith(Class<? extends Annotation> annotation) {
+      //初始化annotation
       this.annotation = annotation;
     }
 
@@ -214,12 +217,15 @@ public class ResolverUtil<T> {
    *        classes, e.g. {@code net.sourceforge.stripes}
    */
   public ResolverUtil<T> find(Test test, String packageName) {
+    //根据包名获取其对应的路径
     String path = getPackagePath(packageName);
 
     try {
+      //通过VFS查找packageName包下的所有资源
       List<String> children = VFS.getInstance().list(path);
       for (String child : children) {
         if (child.endsWith(".class")) {
+          //检测是否符合test条件
           addIfMatching(test, child);
         }
       }
@@ -250,14 +256,18 @@ public class ResolverUtil<T> {
   @SuppressWarnings("unchecked")
   protected void addIfMatching(Test test, String fqn) {
     try {
+      //fqn 是类的完全限定名，包括类所在包的包名
       String externalName = fqn.substring(0, fqn.indexOf('.')).replace('/', '.');
       ClassLoader loader = getClassLoader();
       if (log.isDebugEnabled()) {
+        //日志输出。。。
         log.debug("Checking to see if class " + externalName + " matches criteria [" + test + "]");
       }
-
+      //加载指定类
       Class<?> type = loader.loadClass(externalName);
+      //校验类是否符合test条件
       if (test.matches(type)) {
+        //符合条件的类加入matches集合
         matches.add((Class<T>) type);
       }
     } catch (Throwable t) {

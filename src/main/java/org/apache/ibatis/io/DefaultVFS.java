@@ -58,16 +58,21 @@ public class DefaultVFS extends VFS {
 
       // First, try to find the URL of a JAR file containing the requested resource. If a JAR
       // file is found, then we'll list child resources by reading the JAR.
+      //如果url指向的资源在一个jar包，则获取该jar包对应的url，否则返回null
       URL jarUrl = findJarForResource(url);
       if (jarUrl != null) {
         is = jarUrl.openStream();
         if (log.isDebugEnabled()) {
           log.debug("Listing " + url);
         }
+        //遍历jar包资源，并返回以path开头的资源列表
         resources = listResources(new JarInputStream(is), path);
       }
       else {
+
+
         List<String> children = new ArrayList<>();
+        // ... 遍历jar包指向的目录，将其下资源名称记录到children集合中... (略)
         try {
           if (isJar(url)) {
             // Some versions of JBoss VFS might give a JAR stream even if the resource
@@ -146,6 +151,7 @@ public class DefaultVFS extends VFS {
         }
 
         // Iterate over immediate children, adding files and recursing into directories
+        //遍历children集合，递归查找符合条件的资源名称
         for (String child : children) {
           String resourcePath = path + "/" + child;
           resources.add(resourcePath);
@@ -158,6 +164,7 @@ public class DefaultVFS extends VFS {
     } finally {
       if (is != null) {
         try {
+          //关闭is输入流
           is.close();
         } catch (Exception e) {
           // Ignore
@@ -177,6 +184,7 @@ public class DefaultVFS extends VFS {
    */
   protected List<String> listResources(JarInputStream jar, String path) throws IOException {
     // Include the leading and trailing slash when matching names
+    //...如果path不是以"/"升始和結束，則在其升始和結束位置添加"/" (略)
     if (!path.startsWith("/")) {
       path = "/" + path;
     }
@@ -185,22 +193,24 @@ public class DefaultVFS extends VFS {
     }
 
     // Iterate over the entries and collect those that begin with the requested path
+    //遍历整个Jar包，将以path开头的资源记录到resources集合中并返回
     List<String> resources = new ArrayList<>();
     for (JarEntry entry; (entry = jar.getNextJarEntry()) != null;) {
       if (!entry.isDirectory()) {
         // Add leading slash if it's missing
         StringBuilder name = new StringBuilder(entry.getName());
+        //...如果name不是以"/"开头，则为其添加"/" (略)
         if (name.charAt(0) != '/') {
           name.insert(0, '/');
         }
 
         // Check file name
-        if (name.indexOf(path) == 0) {
+        if (name.indexOf(path) == 0) {  //检测name是否是以path开头
           if (log.isDebugEnabled()) {
             log.debug("Found resource: " + name);
           }
           // Trim leading slash
-          resources.add(name.substring(1));
+          resources.add(name.substring(1)); //记录资源名称
         }
       }
     }
