@@ -40,8 +40,11 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
       | MethodHandles.Lookup.PACKAGE | MethodHandles.Lookup.PUBLIC;
   private static final Constructor<Lookup> lookupConstructor;
   private static final Method privateLookupInMethod;
-  private final SqlSession sqlSession;
-  private final Class<T> mapperInterface;
+  private final SqlSession sqlSession;  //记录了关联的sqlSession对象
+  private final Class<T> mapperInterface; //Mapper接口对应的Class对象
+  //用于缓存MapperMethod对象，其中key是Mapper接口中方法对应的Method对象，value 是对应的
+  // MapperMethod 对象。MapperMethod 对象会完成参数转换以及SQL语句的执行功能
+  //需要注意的是，MapperMethod中并不记录任何状态相关的信息，所以可以在多个代理对象之间共享
   private final Map<Method, MapperMethodInvoker> methodCache;
 
   public MapperProxy(SqlSession sqlSession, Class<T> mapperInterface, Map<Method, MapperMethodInvoker> methodCache) {
@@ -79,9 +82,11 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     try {
+      //如果目标方法继承自object，则直接调用目标方法
       if (Object.class.equals(method.getDeclaringClass())) {
         return method.invoke(this, args);
       } else {
+        //从缓存中获取MapperMethodInvoker对象 如果没有则创建新的MapperMethodInvoker对象并添加到缓存中
         return cachedInvoker(proxy, method, args).invoke(proxy, method, args, sqlSession);
       }
     } catch (Throwable t) {
@@ -95,8 +100,10 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
         if (m.isDefault()) {
           try {
             if (privateLookupInMethod == null) {
+              //对于JDK1.8 调用处理
               return new DefaultMethodInvoker(getMethodHandleJava8(method));
             } else {
+              //对于JDK9 调用处理
               return new DefaultMethodInvoker(getMethodHandleJava9(method));
             }
           } catch (IllegalAccessException | InstantiationException | InvocationTargetException
@@ -104,6 +111,7 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
             throw new RuntimeException(e);
           }
         } else {
+          //其他版本处理
           return new PlainMethodInvoker(new MapperMethod(mapperInterface, method, sqlSession.getConfiguration()));
         }
       });
@@ -141,6 +149,7 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args, SqlSession sqlSession) throws Throwable {
+      //调用MapperMethod.execute()方法执行SQL语句
       return mapperMethod.execute(sqlSession, args);
     }
   }
