@@ -29,10 +29,14 @@ import org.apache.ibatis.cache.Cache;
  * @author Clinton Begin
  */
 public class SoftCache implements Cache {
+  //在SoftCache中，最近使用的一部分缓存项不会被GC回收，这就是通过将其value添加到
+  // hardLinksToAvoidGarbageCollection 集合中实现的(即有强引用指向其value)
+  // hardLinksToAvoidGarbageCollection 集合是LinkedList<object>类型
   private final Deque<Object> hardLinksToAvoidGarbageCollection;
+  //ReferenceQueue引用队列，用于记录已经被GC回收的缓存项所对应的softEntry对象
   private final ReferenceQueue<Object> queueOfGarbageCollectedEntries;
-  private final Cache delegate;
-  private int numberOfHardLinks;
+  private final Cache delegate; //底层被装饰的底层Cache对象
+  private int numberOfHardLinks;  //强连接的个数 默认是256个
 
   public SoftCache(Cache delegate) {
     this.delegate = delegate;

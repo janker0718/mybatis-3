@@ -35,9 +35,9 @@ import org.apache.ibatis.cache.CacheException;
  */
 public class BlockingCache implements Cache {
 
-  private long timeout;
-  private final Cache delegate;
-  private final ConcurrentHashMap<Object, ReentrantLock> locks;
+  private long timeout;         //阻塞超时时间
+  private final Cache delegate;   //被装饰的底层Cache对象
+  private final ConcurrentHashMap<Object, ReentrantLock> locks; //每个key都有对应的ReentrantLock对象
 
   public BlockingCache(Cache delegate) {
     this.delegate = delegate;
@@ -57,18 +57,18 @@ public class BlockingCache implements Cache {
   @Override
   public void putObject(Object key, Object value) {
     try {
-      delegate.putObject(key, value);
+      delegate.putObject(key, value); //向缓存中添加缓存项
     } finally {
-      releaseLock(key);
+      releaseLock(key); //释放锁
     }
   }
 
   @Override
   public Object getObject(Object key) {
-    acquireLock(key);
-    Object value = delegate.getObject(key);
+    acquireLock(key);       //获取该key对应的锁
+    Object value = delegate.getObject(key); //查询key
     if (value != null) {
-      releaseLock(key);
+      releaseLock(key);   //缓存有key对应的缓存项，释放锁，否则继续持有锁
     }
     return value;
   }
@@ -86,29 +86,32 @@ public class BlockingCache implements Cache {
   }
 
   private ReentrantLock getLockForKey(Object key) {
+    //尝试添加到locks集合中 如果存在就使用存在的对象 如果不存在就创建一个ReentrantLock对象
     return locks.computeIfAbsent(key, k -> new ReentrantLock());
   }
 
   private void acquireLock(Object key) {
-    Lock lock = getLockForKey(key);
-    if (timeout > 0) {
+    Lock lock = getLockForKey(key);   //获取ReentrantLock对象
+    if (timeout > 0) {    //获取锁，带超时时长
       try {
         boolean acquired = lock.tryLock(timeout, TimeUnit.MILLISECONDS);
         if (!acquired) {
+          //超时，则抛出异常
           throw new CacheException("Couldn't get a lock in " + timeout + " for the key " +  key + " at the cache " + delegate.getId());
         }
       } catch (InterruptedException e) {
         throw new CacheException("Got interrupted while trying to acquire lock for key " + key, e);
       }
     } else {
-      lock.lock();
+      lock.lock();    //获取锁 不带超时时间
     }
   }
 
+  //下面是releaseLock()方法的实现：
   private void releaseLock(Object key) {
     ReentrantLock lock = locks.get(key);
-    if (lock.isHeldByCurrentThread()) {
-      lock.unlock();
+    if (lock.isHeldByCurrentThread()) { //锁是否被当前线程持有
+      lock.unlock();    //释放锁
     }
   }
 

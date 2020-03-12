@@ -27,9 +27,10 @@ import org.apache.ibatis.cache.Cache;
  */
 public class LruCache implements Cache {
 
-  private final Cache delegate;
+  private final Cache delegate;   //被装饰的底层Cache对象
+  // LinkedHashMap<Object, object>类型对象，它是一一个有序的HashMap,用于记录key最近的使用情况
   private Map<Object, Object> keyMap;
-  private Object eldestKey;
+  private Object eldestKey; //记录最少被使用的缓存项的key
 
   public LruCache(Cache delegate) {
     this.delegate = delegate;
@@ -46,14 +47,16 @@ public class LruCache implements Cache {
     return delegate.getSize();
   }
 
-  public void setSize(final int size) {
+  public void setSize(final int size) { //重新设置缓存大小时，会重置keyMap字段
+    //注意LinkedHashMap构造函数的第三个参数，true表示该LinkedHashMap记录的顺序是
+    // access-order, 也就是说LinkedHashMap.get()方法会改变其记录的顺序
     keyMap = new LinkedHashMap<Object, Object>(size, .75F, true) {
       private static final long serialVersionUID = 4267176411845948333L;
-
+      //当调用LinkedHashMap.put()方法时， 会调用该方法;
       @Override
       protected boolean removeEldestEntry(Map.Entry<Object, Object> eldest) {
         boolean tooBig = size() > size;
-        if (tooBig) {
+        if (tooBig) { //如果已到达缓存上限，则更新eldestKey字段，后面会删除该项
           eldestKey = eldest.getKey();
         }
         return tooBig;
@@ -63,14 +66,14 @@ public class LruCache implements Cache {
 
   @Override
   public void putObject(Object key, Object value) {
-    delegate.putObject(key, value);
-    cycleKeyList(key);
+    delegate.putObject(key, value); //添加缓存项
+    cycleKeyList(key);        //剔除最久未使用的缓存项
   }
 
   @Override
   public Object getObject(Object key) {
-    keyMap.get(key); //touch
-    return delegate.getObject(key);
+    keyMap.get(key);  //修改LinkedHashMap中记录的顺序
+    return delegate.getObject(key); //剔除最久未使用的缓存项
   }
 
   @Override
@@ -86,8 +89,8 @@ public class LruCache implements Cache {
 
   private void cycleKeyList(Object key) {
     keyMap.put(key, key);
-    if (eldestKey != null) {
-      delegate.removeObject(eldestKey);
+    if (eldestKey != null) {  //eldestKey不为空，标识已经达到缓存上限
+      delegate.removeObject(eldestKey); //剔除最久未使用的缓存项
       eldestKey = null;
     }
   }
